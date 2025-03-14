@@ -1,14 +1,88 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
+import { PublicClientApplication, EventType } from '@azure/msal-browser';
 
-function App() {
-  const [count, setCount] = useState(0)
-  const[myBool, setmyBool] = useState(true);
+interface AppProps {
+  msalInstance: PublicClientApplication;
+}
+
+function App({ msalInstance }: AppProps) {
+  const [count, setCount] = useState(0);
+  const [myBool, setMyBool] = useState(true);
+  const [account, setAccount] = useState(msalInstance.getActiveAccount());
+  const [isAuthenticating, setIsAuthenticating] = useState(false); // Tracks login state
+
+  useEffect(() => {
+    const checkAccount = () => {
+      const activeAccount = msalInstance.getActiveAccount();
+      setAccount(activeAccount);
+    };
+
+    // Ensure authentication state updates when events occur
+    const callbackId = msalInstance.addEventCallback((event) => {
+      if (event.eventType === EventType.LOGIN_SUCCESS) {
+        console.log("Login Success:", event.payload);
+        setAccount(msalInstance.getActiveAccount());
+        setIsAuthenticating(false); // Reset authentication state
+      } else if (event.eventType === EventType.LOGIN_FAILURE) {
+        console.error("Login Failed:", event);
+        setIsAuthenticating(false); // Reset on failure
+      }
+    });
+
+    checkAccount(); // Check account on mount
+
+    return () => {
+      if (callbackId) {
+        msalInstance.removeEventCallback(callbackId);
+      }
+    };
+  }, [msalInstance]);
+
   const handleClick = () => {
-    setmyBool((myBool) => !myBool)
+    setMyBool((prev) => !prev);
   };
+
+  const handleLogin = async () => {
+    try {
+      if (account) {
+        console.log("User already signed in, skipping login.");
+        return;
+      }
+
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        msalInstance.setActiveAccount(accounts[0]);
+        console.log("Existing account found, setting active account.");
+        return;
+      }
+
+      if (isAuthenticating) {
+        console.log("Login already in progress. Skipping new login request.");
+        return;
+      }
+
+      setIsAuthenticating(true);
+      console.log("Attempting login...");
+      await msalInstance.loginRedirect();
+    } catch (error) {
+      console.error("Login failed:", error);
+      setIsAuthenticating(false); // Reset on error
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      console.log("Logging out...");
+      await msalInstance.logoutRedirect();
+      setAccount(null);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <>
       <p>fuck shit</p>
@@ -26,9 +100,22 @@ function App() {
           count is {count}
         </button>
 
-  
         <button type="button" onClick={handleClick}>Click me</button>
-        
+
+        {/* Show buttons based on authentication status */}
+        {!account ? (
+          <button type="button" onClick={handleLogin} disabled={isAuthenticating}>
+            {isAuthenticating ? "Authenticating..." : "Sign In / Sign Up with Azure B2C"}
+          </button>
+        ) : (
+          <>
+            <p>Welcome, {account.username}</p>
+            <button type="button" onClick={handleLogout}>
+              Sign Out
+            </button>
+          </>
+        )}
+
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
@@ -40,7 +127,7 @@ function App() {
         {myBool ? <p>Total count: {count} </p> : <p>False!</p>}
       </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
