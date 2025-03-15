@@ -36,7 +36,7 @@ export const b2cPolicies = {
  * For a full list of MSAL.js configuration parameters, visit:
  * https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-browser/docs/configuration.md 
  */
-export const msalConfig = {
+export const msalConfig: Configuration = {
     auth: {
         clientId: '721a38c7-b440-4a27-a21a-f22dfb61a301', // This is the ONLY mandatory field that you need to supply.
         authority: b2cPolicies.authorities.signUpSignIn.authority, // Choose SUSI as your default authority.

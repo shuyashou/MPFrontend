@@ -1,42 +1,34 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
-import { PublicClientApplication, EventType, EventMessage, AuthenticationResult } from '@azure/msal-browser';
-import { msalConfig } from './authConfig';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+import { PublicClientApplication, EventMessage, EventType, AuthenticationResult} from "@azure/msal-browser";
+import { msalConfig } from "./authConfig.ts";
 
-const msalInstance = new PublicClientApplication(msalConfig);
 
-async function initializeMsal() {
-  await msalInstance.initialize(); // Ensure MSAL is initialized
+export const msalInstance = new PublicClientApplication(msalConfig);
 
-  // Check if there's a pending redirect response
-  msalInstance
-    .handleRedirectPromise()
-    .then((response) => {
-      if (response) {
-        console.log("Login Redirect Success:", response);
-        msalInstance.setActiveAccount(response.account);
-      } else {
-        console.log("No pending authentication redirect.");
-      }
-    })
-    .catch((error) => console.error("Redirect error:", error));
-
-  // Handle login success
-  msalInstance.addEventCallback((event: EventMessage) => {
-    if (event.eventType === EventType.LOGIN_SUCCESS && event.payload) {
-      const payload = event.payload as AuthenticationResult;
-      console.log("Login Success:", payload);
-      msalInstance.setActiveAccount(payload.account);
-    }
-  });
-
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <App msalInstance={msalInstance} />
-    </React.StrictMode>
-  );
+if (!msalInstance.getActiveAccount() && msalInstance.getAllAccounts().length > 0) {
+  // Account selection logic is app dependent. Adjust as needed for different use cases.
+  msalInstance.setActiveAccount(msalInstance.getAllAccounts()[0]);
 }
 
-initializeMsal();
+msalInstance.addEventCallback((event: EventMessage) => {
+  if (
+      (event.eventType === EventType.LOGIN_SUCCESS ||
+          event.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
+          event.eventType === EventType.SSO_SILENT_SUCCESS) && event.payload
+  ) {
+      const payload = event.payload as AuthenticationResult;
+      const account = payload.account;
+      msalInstance.setActiveAccount(account);
+  }
+});
+
+
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App msalInstance={msalInstance}/>
+  </React.StrictMode>,
+)
