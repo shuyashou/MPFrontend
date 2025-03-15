@@ -2,74 +2,16 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { AuthenticatedTemplate, MsalProvider, UnauthenticatedTemplate } from '@azure/msal-react';
-import { IPublicClientApplication, InteractionStatus } from "@azure/msal-browser";
-import { useMsal } from "@azure/msal-react";
-import { loginRequest, b2cPolicies } from './authConfig'; 
+import { useAppSelector } from './app/hooks'
+import { selectAccessToken, selectUser } from './features/user/userSlice'
 
+function App() {
 
-type AppProps = {
-  msalInstance: IPublicClientApplication
-};
+  const user = useAppSelector(selectUser);
+  const accessToken = useAppSelector(selectAccessToken);
 
-
-function LoginComponent () {
-  const { instance, inProgress } = useMsal();
-  const activeAccount = instance.getActiveAccount();
-
-  const handleLoginRedirect = () => {
-    instance
-        .loginPopup({
-            ...loginRequest,
-        })
-        .catch(e => {
-            console.error(e);
-        });
-  };
-
-  const handleLogoutRedirect = () => {
-    instance
-        .logoutPopup({
-          mainWindowRedirectUri: '/', // redirects the top level app after logout
-        })
-        .catch(e => {
-            console.error(e);
-        });
-  };
-
-  const handleProfileEdit = () => {
-    if(inProgress === InteractionStatus.None){
-      // @ts-ignore
-      instance.acquireTokenRedirect(b2cPolicies.authorities.editProfile);
-    }
-};
-
-  return (
-    <>
-      <AuthenticatedTemplate>
-        <div>User logged in: {activeAccount?.idTokenClaims?.name}</div>
-        <button 
-            onClick={handleLogoutRedirect}> 
-                Sign Out 
-        </button>
-        <button  
-            onClick={handleProfileEdit}> 
-                Edit Profile 
-        </button>
-      </AuthenticatedTemplate>
-      <UnauthenticatedTemplate>
-        <button  
-            onClick={handleLoginRedirect}> 
-                Sign In 
-        </button>
-      </UnauthenticatedTemplate>
-    </>
-  )
-};
-
-
-function App(props: AppProps) {
   const [count, setCount] = useState(0);
+
   const [myBool, setmyBool] = useState(true);
 
   const handleClick = () => {
@@ -78,8 +20,7 @@ function App(props: AppProps) {
   };
 
   return (
-    <MsalProvider instance={props.msalInstance}>
-      <LoginComponent />
+    <>
       <div>
         <a href="https://vitejs.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
@@ -90,10 +31,10 @@ function App(props: AppProps) {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button type="button" onClick={handleClick}>Click Me</button>
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
         </button>
+        <button type="button" onClick={handleClick}>Click Me</button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
@@ -101,7 +42,12 @@ function App(props: AppProps) {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-    </MsalProvider>
+      <div>
+        {myBool ? <p>Total Count: {count}</p> : <p>False!</p>}
+      </div>
+      <p>Id Token: {user?.idToken}</p>
+      <p>Access Token: {accessToken}</p>
+    </>
   )
 }
 
