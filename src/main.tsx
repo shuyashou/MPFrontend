@@ -11,7 +11,7 @@ import { store } from './app/store'
 import { Provider } from 'react-redux'
 import ProductTable from './components/ProductTable.tsx'
 import NoMatch from './components/NoMatch.tsx';
-import UserInventory from './components/UserInventory.tsx';
+import UserInventory from './features/userInventory/UserInventory.tsx';
 
 export const msalInstance = new PublicClientApplication(msalConfig);
 

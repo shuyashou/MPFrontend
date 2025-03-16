@@ -1,8 +1,9 @@
 import {faker} from "@faker-js/faker";
-import {Product} from "../dataModels/Product";
+import { ListingProduct } from '../dataModels/ListingProduct';
 
-const newProduct = () : Product => {
+const newProduct = () : ListingProduct => {
     return {
+        id: faker.string.uuid(),
         name: faker.commerce.productName(),
         category: faker.commerce.department(),
         price: faker.commerce.price(),
@@ -11,8 +12,8 @@ const newProduct = () : Product => {
     };
 };
 
-export function getProducts(lens: number): Product[] {
-    const arr: Product[] = [];
+export function getListingProducts(lens: number): ListingProduct[] {
+    const arr: ListingProduct[] = [];
     for(let i = 0; i < lens; i++)
     {
       arr.push(newProduct());

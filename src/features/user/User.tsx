@@ -35,7 +35,7 @@ function LoginComponent () {
           });});
         }
 
-    }, [ instance]);
+    }, [dispatch, instance]);
 
   const handleLoginRedirect = () => {
     instance
@@ -68,35 +68,28 @@ function LoginComponent () {
         }
     };
 
-  return (
-    <>
-      <nav>
-          <ul>
-            <AuthenticatedTemplate>
-            <li>
-              <a href="/">Home</a>
-            </li>
-            <div className="dropdown">
-            <button className="dropbtn">{claims?.name}</button>
-              <div className="dropdown-content">
-                <Link to="/inventory">Inventory</Link>
-                <a href="" onClick={handleProfileEdit}>Edit Profile</a>
-                <a href="" onClick={handleLogoutRedirect}>Sign Out</a>
-              </div>
-            </div>
-            </AuthenticatedTemplate>
-            <UnauthenticatedTemplate>
-              <li>
-                <button  
-                  onClick={handleLoginRedirect}> 
-                    Sign In 
-                </button>
-              </li>
-            </UnauthenticatedTemplate>
-          </ul>
-      </nav>
-    </>
-  )
+    return (
+      <>
+        <AuthenticatedTemplate>
+        <div className="dropdown">
+          <button className="dropbtn">{claims?.name}</button>
+          <div className="dropdown-content">
+            <Link to="/inventory">Inventory</Link>
+            <a href="" onClick={handleProfileEdit}>Edit Profile</a>
+            <a href="" onClick={handleLogoutRedirect}>Sign Out</a>
+          </div>
+        </div>
+        </AuthenticatedTemplate>
+        <UnauthenticatedTemplate>
+          <li>
+            <button  
+              onClick={handleLoginRedirect}> 
+                Sign In 
+            </button>
+          </li>
+        </UnauthenticatedTemplate>
+      </>
+    )
 }
 
 function User(props: MsalProp) {

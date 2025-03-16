@@ -1,5 +1,4 @@
-import './ProductTable.css'
-import { Fragment, useState, useMemo } from 'react'
+import { Fragment, useState, useMemo, useEffect } from 'react'
 import {
   Column,
   ColumnDef,
@@ -11,20 +10,31 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  Row,
   getExpandedRowModel,
   SortingState,
 } from '@tanstack/react-table';
-import { ListingProduct } from '../dataModels/ListingProduct'
-import { getListingProducts } from '../api/GetListingProductsAPI'
-import { useAppSelector } from '../app/hooks'
-import { selectAccessToken } from '../features/user/userSlice'
+import { Product } from '../../dataModels/Product'
+import { LoadingStatus, fetchInventory, selectInventoryProducts, refreshData } from './userInventorySlice'
+import { useAppSelector, useAppDispatch } from '../../app/hooks'
+import { selectAccessToken, selectClaims } from '../user/userSlice'
 
 
-function ProductTable() {
+function UserInventory() {
+
+  const dispatch = useAppDispatch()
   const accessToken = useAppSelector(selectAccessToken);
+  const claims = useAppSelector(selectClaims);
+  const userInventoryProducts = useAppSelector(selectInventoryProducts);
+  const userId = claims?.sub;
+  const inventoryStatus = useAppSelector(state => state.userInventory.status)
 
-  const columns = useMemo<ColumnDef<ListingProduct>[]>(
+  useEffect(() => {
+    if (inventoryStatus === LoadingStatus.Idle && accessToken != null ) {
+      dispatch(fetchInventory(userId))
+    }
+  }, [inventoryStatus, dispatch, userId, accessToken])
+
+  const columns = useMemo<ColumnDef<Product>[]>(
     () => [
       {
         accessorKey: 'name',
@@ -35,24 +45,10 @@ function ProductTable() {
         accessorKey: 'category',
         header: () => 'Category',
         enableSorting: false
-      },
-      {
-        accessorKey: 'price',
-        header: () => 'Price',
-        sortUndefined: 'last', //force undefined values to the end
-        sortDescFirst: false,
-        enableColumnFilter: false
-      },
-      {
-        accessorKey: 'seller',
-        header: () => 'Seller',
-        enableSorting: false
-      },
+      }
     ],
     []
   );
-
-  const [data] = useState(() => getListingProducts(10000));
 
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -61,9 +57,9 @@ function ProductTable() {
     pageSize: 10,
   });
 
-  const table = useReactTable({
+  const table = useReactTable<Product>({
     columns,
-    data,
+    data: userInventoryProducts,
     debugTable: true,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -81,20 +77,15 @@ function ProductTable() {
     // autoResetPageIndex: false, // turn off page index reset when sorting or filtering
   });
 
-  const renderSubComponent = ({ row }: { row: Row<ListingProduct> }) => {
-    return (
-      <div className={"productDetails " + (row.getIsExpanded() ? 'tb-expand' : '')}>
-        <p>{row.original.description}</p> 
-        <div style={{textAlign:'right'}}>
-          <button className='buyBtn'>Buy Now</button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="main">
-    {accessToken ? (
+    {accessToken ? ( 
+      inventoryStatus == LoadingStatus.Loading ? (
+        <>
+          <h3>Loading...</h3>
+        </>
+      ) :
+      (
       <>
       <table>
         <thead>
@@ -146,11 +137,6 @@ function ProductTable() {
                     </td>
                   )
                 })}
-              </tr>
-              <tr>
-                <td colSpan={row.getVisibleCells().length}>
-                {renderSubComponent({row})}
-                </td>
               </tr>
               </Fragment>
             )
@@ -223,8 +209,9 @@ function ProductTable() {
         {table.getRowCount().toLocaleString()} Rows
       </div>
       <pre>{JSON.stringify(table.getState().pagination, null, 2)}</pre>
+      <button onClick={() => dispatch(refreshData())}>Refresh Data</button>
     </>
-    ) : (
+    )) : (
     <>
       <h1>Please login first.</h1>
     </>
@@ -237,8 +224,8 @@ function Filter({
   column,
   table,
 }: {
-  column: Column<ListingProduct, unknown>;
-  table: Table<ListingProduct>;
+  column: Column<Product, unknown>;
+  table: Table<Product>;
 }) {
   const firstValue = table
     .getPreFilteredRowModel()
@@ -285,4 +272,4 @@ function Filter({
   );
 }  
 
-export default ProductTable;
+export default UserInventory;
