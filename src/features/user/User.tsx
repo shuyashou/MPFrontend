@@ -35,7 +35,7 @@ function LoginComponent () {
           });});
         }
 
-    }, [dispatch, instance]);
+    }, [accessToken, dispatch, instance]);
 
   const handleLoginRedirect = () => {
     instance

@@ -1,4 +1,5 @@
 import { Fragment, useState, useMemo, useEffect } from 'react'
+import Modal from 'react-modal';
 import {
   Column,
   ColumnDef,
@@ -17,10 +18,10 @@ import { Product } from '../../dataModels/Product'
 import { LoadingStatus, fetchInventory, selectInventoryProducts, refreshData } from './userInventorySlice'
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
 import { selectAccessToken, selectClaims } from '../user/userSlice'
+import ListingProductForm from './ListingProductForm';
 
 
 function UserInventory() {
-
   const dispatch = useAppDispatch()
   const accessToken = useAppSelector(selectAccessToken);
   const claims = useAppSelector(selectClaims);
@@ -77,8 +78,43 @@ function UserInventory() {
     // autoResetPageIndex: false, // turn off page index reset when sorting or filtering
   });
 
+  const customStyles = {
+    content: {
+      top: '50%',
+      left: '50%',
+      right: 'auto',
+      bottom: 'auto',
+      marginRight: '-50%',
+      transform: 'translate(-50%, -50%)',
+    },
+  };
+
+  Modal.setAppElement('#root');
+  const [modalIsOpen, setIsOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product>();
+
+  function openModal(product: Product) {
+    setIsOpen(true);
+    setSelectedProduct(product);
+  }
+
+  function afterOpenModal() {
+  }
+
+  function closeModal() {
+    setIsOpen(false);
+  }
+
   return (
     <div className="main">
+      <Modal
+        isOpen={modalIsOpen}
+        onAfterOpen={afterOpenModal}
+        onRequestClose={closeModal}
+        style={customStyles}
+      >
+        <ListingProductForm selectedProduct={selectedProduct} closeModal={closeModal} />
+      </Modal>
     {accessToken ? ( 
       inventoryStatus == LoadingStatus.Loading ? (
         <>
@@ -126,7 +162,7 @@ function UserInventory() {
           {table.getRowModel().rows.map((row) => {
             return (
               <Fragment key={row.id}>
-                <tr onClick={row.getToggleExpandedHandler()} className='cursor-pointer tr-hover'>
+                <tr onClick={() => openModal(row.original)} className='cursor-pointer tr-hover'>
                 {row.getVisibleCells().map((cell) => {
                   return (
                     <td key={cell.id}>
