@@ -1,14 +1,12 @@
 import { useEffect } from 'react';
 import { AuthenticatedTemplate, MsalProvider, UnauthenticatedTemplate } from '@azure/msal-react';
-import { IPublicClientApplication, InteractionStatus } from "@azure/msal-browser";
+import { InteractionStatus, SilentRequest } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest, b2cPolicies } from '../../authConfig';
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
 import { setActiveAccount, setAccessToken, setClaims, selectUser } from './userSlice'
-
-type UserProps = {
-    msalInstance: IPublicClientApplication
-};
+import {MsalProp} from "../../dataModels/MsalProp"
+import "./User.css"
 
 function LoginComponent () {
   const { instance, inProgress } = useMsal();
@@ -21,6 +19,19 @@ function LoginComponent () {
             dispatch(setActiveAccount(activeAccount));
             dispatch(setClaims(activeAccount?.idTokenClaims));
         }
+
+        const accessTokenRequest: SilentRequest = {
+          scopes: loginRequest.scopes,
+          account: activeAccount || undefined,
+        };
+        
+        instance.initialize().then(() => {instance.acquireTokenSilent(accessTokenRequest)
+        .then((result) => {
+          // Acquire token silent success
+          dispatch(setAccessToken(result.accessToken));
+        });});
+        
+
     }, [dispatch, instance]);
 
   const handleLoginRedirect = () => {
@@ -57,29 +68,36 @@ function LoginComponent () {
 
   return (
     <>
-      <AuthenticatedTemplate>
-        <p>Test: {instance.getActiveAccount()?.idTokenClaims?.name}</p>
-        <div>User logged in: {user?.idTokenClaims?.name}</div>
-        <button 
-            onClick={handleLogoutRedirect}> 
-                Sign Out 
-        </button>
-        <button  
-            onClick={handleProfileEdit}> 
-                Edit Profile 
-        </button>
-      </AuthenticatedTemplate>
-      <UnauthenticatedTemplate>
-        <button  
-            onClick={handleLoginRedirect}> 
-                Sign In 
-        </button>
-      </UnauthenticatedTemplate>
+      <nav>
+          <ul>
+            <AuthenticatedTemplate>
+            <li>
+              <a href="/">Home</a>
+            </li>
+            <div className="dropdown">
+              <button className="dropbtn">{user?.idTokenClaims?.name}</button>
+              <div className="dropdown-content">
+                <a href="inventory">Inventory</a>
+                <a href="" onClick={handleProfileEdit}>Edit Profile</a>
+                <a href="" onClick={handleLogoutRedirect}>Sign Out</a>
+              </div>
+            </div>
+            </AuthenticatedTemplate>
+            <UnauthenticatedTemplate>
+              <li>
+                <button  
+                  onClick={handleLoginRedirect}> 
+                    Sign In 
+                </button>
+              </li>
+            </UnauthenticatedTemplate>
+          </ul>
+      </nav>
     </>
   )
 }
 
-function User(props: UserProps) {
+function User(props: MsalProp) {
   return (
     <MsalProvider instance={props.msalInstance}>
       <LoginComponent />

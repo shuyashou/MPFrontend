@@ -24,10 +24,7 @@ import { selectAccessToken, selectUser } from '../features/user/userSlice'
 function ProductTable () {
   const user = useAppSelector(selectUser);
   const accessToken = useAppSelector(selectAccessToken);
-
-  const rerender = React.useReducer(() => ({}), {})[1]
   const [data, setData] = React.useState(() => getProducts(1000))
-  const refreshData = () => setData(() => getProducts(100000))
 
   const columns = React.useMemo<ColumnDef<Product>[]>(
     () => [

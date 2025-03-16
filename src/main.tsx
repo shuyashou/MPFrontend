@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import User from './features/user/User.tsx'
-import App from './components/App.tsx'
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Nav from './components/Nav.tsx'
 import './index.css'
 
 import { PublicClientApplication, EventMessage, AuthenticationResult, EventType } from '@azure/msal-browser';
@@ -10,6 +10,8 @@ import { msalConfig } from './authConfig';
 import { store } from './app/store'
 import { Provider } from 'react-redux'
 import ProductTable from './components/ProductTable.tsx'
+import NoMatch from './components/NoMatch.tsx';
+import UserInventory from './components/UserInventory.tsx';
 
 export const msalInstance = new PublicClientApplication(msalConfig);
 
@@ -29,20 +31,19 @@ msalInstance.addEventCallback((event: EventMessage) => {
   }
 });
 
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <div className="header">
-        <nav>
-          <ul>
-            <li>
-              <User msalInstance={msalInstance} />
-            </li>
-          </ul>
-        </nav>
-      </div>
-      <App />
-      <ProductTable />
-    </Provider>
+    <BrowserRouter>
+      <Provider store={store}>
+        <Routes>
+          <Route path="/" element={<Nav msalInstance={msalInstance} />}>
+            <Route index element={<ProductTable />} />
+            <Route path="inventory" element={<UserInventory />} />
+            <Route path="*" element={<NoMatch />} />
+          </Route>
+        </Routes>
+      </Provider>
+    </BrowserRouter>
   </React.StrictMode>,
 )
