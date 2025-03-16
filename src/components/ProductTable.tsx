@@ -1,8 +1,5 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-
-import './index.css'
-
+import './ProductTable.css'
+import { Fragment, useState, useMemo } from 'react'
 import {
   Column,
   ColumnDef,
@@ -14,105 +11,55 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from '@tanstack/react-table'
-
-import { Product } from '../dataModels/Product';
-import { getProducts } from '../api/GetProductsAPI';
+  Row,
+  getExpandedRowModel,
+  SortingState,
+} from '@tanstack/react-table';
+import { Product } from '../dataModels/Product'
+import { getProducts } from '../api/GetProductsAPI'
 import { useAppSelector } from '../app/hooks'
-import { selectAccessToken, selectUser } from '../features/user/userSlice'
+import { selectAccessToken } from '../features/user/userSlice'
 
-function ProductTable () {
-  const user = useAppSelector(selectUser);
+
+function ProductTable() {
   const accessToken = useAppSelector(selectAccessToken);
-  const [data, setData] = React.useState(() => getProducts(1000))
 
-  const columns = React.useMemo<ColumnDef<Product>[]>(
+  const columns = useMemo<ColumnDef<Product>[]>(
     () => [
       {
         accessorKey: 'name',
-        cell: info => info.getValue(),
-        footer: props => props.column.id,
+        header: () => 'Product Name',
+        enableSorting: false
       },
       {
         accessorKey: 'category',
         header: () => 'Category',
-        footer: props => props.column.id,
+        enableSorting: false
       },
       {
         accessorKey: 'price',
         header: () => 'Price',
-        footer: props => props.column.id,
+        sortUndefined: 'last', //force undefined values to the end
+        sortDescFirst: false,
+        enableColumnFilter: false
       },
       {
         accessorKey: 'seller',
-        header: 'Seller',
-        footer: props => props.column.id,
-      },
-      {
-        accessorKey: 'description',
-        header: 'Description',
-        footer: props => props.column.id,
+        header: () => 'Seller',
+        enableSorting: false
       },
     ],
     []
-  )
+  );
 
-  function Filter({
-    column,
-    table,
-  }: {
-    column: Column<Product, any>
-    table: Table<Product>
-  }) {
-    const firstValue = table
-      .getPreFilteredRowModel()
-      .flatRows[0]?.getValue(column.id)
-  
-    const columnFilterValue = column.getFilterValue()
-  
-    return typeof firstValue === 'number' ? (
-      <div className="flex space-x-2" onClick={e => e.stopPropagation()}>
-        <input
-          type="number"
-          value={(columnFilterValue as [number, number])?.[0] ?? ''}
-          onChange={e =>
-            column.setFilterValue((old: [number, number]) => [
-              e.target.value,
-              old?.[1],
-            ])
-          }
-          placeholder={`Min`}
-          className="w-24 border shadow rounded"
-        />
-        <input
-          type="number"
-          value={(columnFilterValue as [number, number])?.[1] ?? ''}
-          onChange={e =>
-            column.setFilterValue((old: [number, number]) => [
-              old?.[0],
-              e.target.value,
-            ])
-          }
-          placeholder={`Max`}
-          className="w-24 border shadow rounded"
-        />
-      </div>
-    ) : (
-      <input
-        className="w-36 border shadow rounded"
-        onChange={e => column.setFilterValue(e.target.value)}
-        onClick={e => e.stopPropagation()}
-        placeholder={`Search...`}
-        type="text"
-        value={(columnFilterValue ?? '') as string}
-      />
-    )
-  }
+  const [data] = useState(() => getProducts(10000));
 
-  const [pagination, setPagination] = React.useState<PaginationState>({
+  const [sorting, setSorting] = useState<SortingState>([])
+
+  const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
-  })
+  });
 
   const table = useReactTable({
     columns,
@@ -120,28 +67,42 @@ function ProductTable () {
     debugTable: true,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination,
     //no need to pass pageCount or rowCount with client-side pagination as it is calculated automatically
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: () => true,
     state: {
+      sorting,
       pagination,
     },
     // autoResetPageIndex: false, // turn off page index reset when sorting or filtering
-  })
+  });
+
+  const renderSubComponent = ({ row }: { row: Row<Product> }) => {
+    return (
+      <div className={"productDetails " + (row.getIsExpanded() ? 'tb-expand' : '')}>
+        <p>{row.original.description}</p> 
+        <div style={{textAlign:'right'}}>
+          <button className='buyBtn'>Buy Now</button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="main">
-      {accessToken ? (
+    {accessToken ? (
       <>
-      <div className="h-2" />
       <table>
         <thead>
-          {table.getHeaderGroups().map(headerGroup => (
+          {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => {
+              {headerGroup.headers.map((header) => {
                 return (
-                  <th key={header.id} colSpan={header.colSpan}>
+                  <th key={header.id}>
                     <div
                       {...{
                         className: header.column.getCanSort()
@@ -165,16 +126,17 @@ function ProductTable () {
                       ) : null}
                     </div>
                   </th>
-                )
+                );
               })}
             </tr>
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map(row => {
+          {table.getRowModel().rows.map((row) => {
             return (
-              <tr key={row.id}>
-                {row.getVisibleCells().map(cell => {
+              <Fragment key={row.id}>
+                <tr onClick={row.getToggleExpandedHandler()} className='cursor-pointer tr-hover'>
+                {row.getVisibleCells().map((cell) => {
                   return (
                     <td key={cell.id}>
                       {flexRender(
@@ -185,12 +147,17 @@ function ProductTable () {
                   )
                 })}
               </tr>
+              <tr>
+                <td colSpan={row.getVisibleCells().length}>
+                {renderSubComponent({row})}
+                </td>
+              </tr>
+              </Fragment>
             )
           })}
         </tbody>
       </table>
-      <div className="h-2" />
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <button
           className="border rounded p-1"
           onClick={() => table.firstPage()}
@@ -230,23 +197,21 @@ function ProductTable () {
           | Go to page:
           <input
             type="number"
-            min="1"
-            max={table.getPageCount()}
             defaultValue={table.getState().pagination.pageIndex + 1}
-            onChange={e => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0
-              table.setPageIndex(page)
+            onChange={(e) => {
+              const page = e.target.value ? Number(e.target.value) - 1 : 0;
+              table.setPageIndex(page);
             }}
             className="border p-1 rounded w-16"
           />
         </span>
         <select
           value={table.getState().pagination.pageSize}
-          onChange={e => {
-            table.setPageSize(Number(e.target.value))
+          onChange={(e) => {
+            table.setPageSize(Number(e.target.value));
           }}
         >
-          {[10, 20, 30, 40, 50].map(pageSize => (
+          {[10, 20, 30, 40, 50].map((pageSize) => (
             <option key={pageSize} value={pageSize}>
               Show {pageSize}
             </option>
@@ -257,13 +222,67 @@ function ProductTable () {
         Showing {table.getRowModel().rows.length.toLocaleString()} of{' '}
         {table.getRowCount().toLocaleString()} Rows
       </div>
-      <pre>{JSON.stringify(table.getState().pagination, null, 2)}</pre></>) : (
-        <>
-        <h1>Please log in first.</h1>
-        </>
-      ) }
+      <pre>{JSON.stringify(table.getState().pagination, null, 2)}</pre>
+    </>
+    ) : (
+    <>
+      <h1>Please login first.</h1>
+    </>
+    )}
     </div>
-  )
+  );
 }
+
+function Filter({
+  column,
+  table,
+}: {
+  column: Column<Product, unknown>;
+  table: Table<Product>;
+}) {
+  const firstValue = table
+    .getPreFilteredRowModel()
+    .flatRows[0]?.getValue(column.id);
+
+  const columnFilterValue = column.getFilterValue();
+
+  return typeof firstValue === 'number' ? (
+    <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+      <input
+        type="number"
+        value={(columnFilterValue as [number, number])?.[0] ?? ''}
+        onChange={(e) =>
+          column.setFilterValue((old: [number, number]) => [
+            e.target.value,
+            old?.[1],
+          ])
+        }
+        placeholder={`Min`}
+        className="w-24 border shadow rounded"
+      />
+      <input
+        type="number"
+        value={(columnFilterValue as [number, number])?.[1] ?? ''}
+        onChange={(e) =>
+          column.setFilterValue((old: [number, number]) => [
+            old?.[0],
+            e.target.value,
+          ])
+        }
+        placeholder={`Max`}
+        className="w-24 border shadow rounded"
+      />
+    </div>
+  ) : (
+    <input
+      className="w-36 border shadow rounded"
+      onChange={(e) => column.setFilterValue(e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      placeholder={`Search...`}
+      type="text"
+      value={(columnFilterValue ?? '') as string}
+    />
+  );
+}  
 
 export default ProductTable;
