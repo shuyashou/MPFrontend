@@ -43,7 +43,7 @@ export default function ListingProductForm(props: ListingProductFormProp) {
       >
         <div>
           <label className='iterable'>Product Name:</label>
-          <input value={props.selectedProduct?.name} />
+          <input readOnly={true} value={props.selectedProduct?.name} />
         </div>
         <div>
           {/* A type-safe field component*/}
