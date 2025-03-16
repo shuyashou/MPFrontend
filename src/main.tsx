@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import User from './features/user/User.tsx'
-import App from './App.tsx'
+import App from './components/App.tsx'
 import './index.css'
 
 import { PublicClientApplication, EventMessage, AuthenticationResult, EventType } from '@azure/msal-browser';
@@ -9,6 +9,7 @@ import { msalConfig } from './authConfig';
 
 import { store } from './app/store'
 import { Provider } from 'react-redux'
+import ProductTable from './components/ProductTable.tsx'
 
 export const msalInstance = new PublicClientApplication(msalConfig);
 
@@ -31,8 +32,17 @@ msalInstance.addEventCallback((event: EventMessage) => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Provider store={store}>
-      <User msalInstance={msalInstance} />
+      <div className="header">
+        <nav>
+          <ul>
+            <li>
+              <User msalInstance={msalInstance} />
+            </li>
+          </ul>
+        </nav>
+      </div>
       <App />
+      <ProductTable />
     </Provider>
   </React.StrictMode>,
 )
