@@ -1,17 +1,16 @@
-import { useState } from 'react'
 import './App.css'
 import { useAppSelector } from '../app/hooks'
-import { selectAccessToken, selectUser } from '../features/user/userSlice'
+import { selectAccessToken, selectClaims } from '../features/user/userSlice'
 
 function App() {
 
-  const user = useAppSelector(selectUser);
+  const claims = useAppSelector(selectClaims);
   const accessToken = useAppSelector(selectAccessToken);
 
 
   return (
     <>
-      <p>Id Token: {user?.idToken}</p>
+      <p>Claims: {JSON.stringify(claims)}</p>
       <p>Access Token: {accessToken}</p>
     </>
   )

@@ -4,19 +4,18 @@ import { InteractionStatus, SilentRequest } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest, b2cPolicies } from '../../authConfig';
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
-import { setActiveAccount, setAccessToken, setClaims, selectUser } from './userSlice'
+import { selectClaims, setAccessToken, setClaims } from './userSlice'
 import {MsalProp} from "../../dataModels/MsalProp"
 import "./User.css"
 
 function LoginComponent () {
   const { instance, inProgress } = useMsal();
-  const user = useAppSelector(selectUser);
+  const claims = useAppSelector(selectClaims);
   const dispatch = useAppDispatch()
 
     useEffect(() => {
         const activeAccount = instance.getActiveAccount();
         if (activeAccount) {
-            dispatch(setActiveAccount(activeAccount));
             dispatch(setClaims(activeAccount?.idTokenClaims));
         }
 
@@ -41,7 +40,6 @@ function LoginComponent () {
         })
         .then(result => {
             dispatch(setAccessToken(result.accessToken));
-            dispatch(setActiveAccount(result.account));
             dispatch(setClaims(result.idTokenClaims));
         })
         .catch(e => {
@@ -75,7 +73,7 @@ function LoginComponent () {
               <a href="/">Home</a>
             </li>
             <div className="dropdown">
-              <button className="dropbtn">{user?.idTokenClaims?.name}</button>
+            <button className="dropbtn">{claims?.name}</button>
               <div className="dropdown-content">
                 <a href="inventory">Inventory</a>
                 <a href="" onClick={handleProfileEdit}>Edit Profile</a>
