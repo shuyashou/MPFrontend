@@ -34,16 +34,19 @@ msalInstance.addEventCallback((event: EventMessage) => {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Provider store={store}>
+    <Provider store={store}>
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Nav msalInstance={msalInstance} />}>
             <Route index element={<ProductTable />} />
             <Route path="inventory" element={<UserInventory />} />
+            {/* Using path="*"" means "match anything", so this route
+                  acts like a catch-all for URLs that we don't have explicit
+                  routes for. */}
             <Route path="*" element={<NoMatch />} />
           </Route>
         </Routes>
-      </Provider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </Provider>
   </React.StrictMode>,
 )

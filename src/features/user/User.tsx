@@ -4,13 +4,15 @@ import { InteractionStatus, SilentRequest } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest, b2cPolicies } from '../../authConfig';
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
-import { selectClaims, setAccessToken, setClaims } from './userSlice'
+import { selectAccessToken, selectClaims, setAccessToken, setClaims } from './userSlice'
 import {MsalProp} from "../../dataModels/MsalProp"
 import "./User.css"
+import { Link } from 'react-router-dom';
 
 function LoginComponent () {
   const { instance, inProgress } = useMsal();
   const claims = useAppSelector(selectClaims);
+  const accessToken = useAppSelector(selectAccessToken);
   const dispatch = useAppDispatch()
 
     useEffect(() => {
@@ -19,19 +21,21 @@ function LoginComponent () {
             dispatch(setClaims(activeAccount?.idTokenClaims));
         }
 
-        const accessTokenRequest: SilentRequest = {
-          scopes: loginRequest.scopes,
-          account: activeAccount || undefined,
-        };
+        if(accessToken == null) {
+          const accessTokenRequest: SilentRequest = {
+            scopes: loginRequest.scopes,
+            account: activeAccount || undefined,
+          };
         
-        instance.initialize().then(() => {instance.acquireTokenSilent(accessTokenRequest)
-        .then((result) => {
-          // Acquire token silent success
-          dispatch(setAccessToken(result.accessToken));
-        });});
         
+          instance.initialize().then(() => {instance.acquireTokenSilent(accessTokenRequest)
+          .then((result) => {
+            // Acquire token silent success
+            dispatch(setAccessToken(result.accessToken));
+          });});
+        }
 
-    }, [dispatch, instance]);
+    }, [ instance]);
 
   const handleLoginRedirect = () => {
     instance
@@ -75,7 +79,7 @@ function LoginComponent () {
             <div className="dropdown">
             <button className="dropbtn">{claims?.name}</button>
               <div className="dropdown-content">
-                <a href="inventory">Inventory</a>
+                <Link to="/inventory">Inventory</Link>
                 <a href="" onClick={handleProfileEdit}>Edit Profile</a>
                 <a href="" onClick={handleLogoutRedirect}>Sign Out</a>
               </div>
