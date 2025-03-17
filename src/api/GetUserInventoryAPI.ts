@@ -9,7 +9,7 @@ const newProduct = () => {
     };
 };
 
-export async function getUserInventory(userId: string | undefined): Promise<Array<Product>> {
+export async function getUserInventory(_userId: string | undefined): Promise<Array<Product>> {
     return new Promise<Product[]>((resolve) => {
         // Simulating an asynchronous operation (e.g., fetching data)
         const arr: Product[] = [];
@@ -24,7 +24,7 @@ export async function getUserInventory(userId: string | undefined): Promise<Arra
     });
 }
 
-export async function addProductToUserInventory(productId: string | undefined): Promise<boolean> {
+export async function addProductToUserInventory(_productId: string | undefined): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
         // Simulating an asynchronous operation (e.g., fetching data)
         setTimeout(() => {

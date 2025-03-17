@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { AuthenticatedTemplate, MsalProvider, UnauthenticatedTemplate } from '@azure/msal-react';
-import { InteractionStatus, SilentRequest, BrowserUtils } from "@azure/msal-browser";
+import { InteractionStatus, SilentRequest } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest, b2cPolicies } from '../../authConfig';
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
