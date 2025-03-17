@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { AuthenticatedTemplate, MsalProvider, UnauthenticatedTemplate } from '@azure/msal-react';
-import { InteractionStatus, SilentRequest } from "@azure/msal-browser";
+import { InteractionStatus, SilentRequest, BrowserUtils } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest, b2cPolicies } from '../../authConfig';
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
@@ -8,6 +8,8 @@ import { selectAccessToken, selectClaims, setAccessToken, setClaims } from './us
 import {MsalProp} from "../../dataModels/MsalProp"
 import "./User.css"
 import { Link } from 'react-router-dom';
+import { SeverityLevel } from '@microsoft/applicationinsights-web';
+import { appInsights} from '../../ApplicationInsightsService';
 
 function LoginComponent () {
   const { instance, inProgress } = useMsal();
@@ -31,8 +33,10 @@ function LoginComponent () {
           instance.initialize().then(() => {instance.acquireTokenSilent(accessTokenRequest)
           .then((result) => {
             // Acquire token silent success
-            dispatch(setAccessToken(result.accessToken));
-          });});
+              dispatch(setAccessToken(result.accessToken));
+              appInsights.trackTrace({ message: 'Acquire access token silent succeed.', severityLevel: SeverityLevel.Information });
+            });
+          });
         }
 
     }, [accessToken, dispatch, instance]);
@@ -43,6 +47,7 @@ function LoginComponent () {
             ...loginRequest,
         })
         .then(result => {
+            appInsights.trackTrace({ message: 'User logged in.', severityLevel: SeverityLevel.Information });
             dispatch(setAccessToken(result.accessToken));
             dispatch(setClaims(result.idTokenClaims));
         })
@@ -57,7 +62,7 @@ function LoginComponent () {
           mainWindowRedirectUri: '/', // redirects the top level app after logout
         })
         .catch(e => {
-            console.error(e);
+          console.error(e);
         });
   };
 
