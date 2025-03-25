@@ -84,8 +84,14 @@ export const protectedResources = {
     apiTodoList: {
         endpoint: 'http://localhost:5000/api/todolist',
         scopes: {
-            read: ['https://thomas1n.onmicrosoft.com/tasks-api/tasks.read'],
-            write: ['https://thomas1n.onmicrosoft.com/tasks-api/tasks.write'],
+            users: {
+                read: ['https://thomas1n.onmicrosoft.com/marketplace-api/users.read'],
+                write: ['https://thomas1n.onmicrosoft.com/marketplace-api/users.write'],
+            },
+            listingproducts: {
+                read: ['https://thomas1n.onmicrosoft.com/marketplace-api/listingproducts.read'],
+                write: ['https://thomas1n.onmicrosoft.com/marketplace-api/listingproducts.write'],
+            }
         },
     },
 };
@@ -97,5 +103,9 @@ export const protectedResources = {
  * https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent#openid-connect-scopes
  */
 export const loginRequest = {
-    scopes: [...protectedResources.apiTodoList.scopes.read, ...protectedResources.apiTodoList.scopes.write],
+    scopes: [
+        ...protectedResources.apiTodoList.scopes.users.read,
+        ...protectedResources.apiTodoList.scopes.users.write, 
+        ...protectedResources.apiTodoList.scopes.listingproducts.read, 
+        ...protectedResources.apiTodoList.scopes.listingproducts.write],
 };
