@@ -12,12 +12,13 @@ import { Provider } from 'react-redux'
 import ProductTable from './components/ProductTable.tsx'
 import NoMatch from './components/NoMatch.tsx';
 import UserInventory from './features/userInventory/UserInventory.tsx';
-
+import { injectStore } from './api/ApiClient.ts';
 import { reactPlugin } from './ApplicationInsightsService';
 import { AppInsightsContext } from '@microsoft/applicationinsights-react-js';
+import { inject } from 'vitest';
 
 export const msalInstance = new PublicClientApplication(msalConfig);
-
+injectStore(store);
 // Default to using the first account if no account is active on page load
 if (!msalInstance.getActiveAccount() && msalInstance.getAllAccounts().length > 0) {
   // Account selection logic is app dependent. Adjust as needed for different use cases.

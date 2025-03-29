@@ -15,7 +15,8 @@ import {
   SortingState,
 } from '@tanstack/react-table';
 import { Product } from '../../dataModels/Product'
-import { LoadingStatus, fetchInventory, selectInventoryProducts, refreshData } from './userInventorySlice'
+import { refreshData } from './userInventorySlice'
+import { GetUserInventory } from '../../api/GetUserInventoryAPI'; 
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
 import { selectAccessToken, selectClaims } from '../user/userSlice'
 import ListingProductForm from './ListingProductForm';
@@ -25,15 +26,24 @@ function UserInventory() {
   const dispatch = useAppDispatch()
   const accessToken = useAppSelector(selectAccessToken);
   const claims = useAppSelector(selectClaims);
-  const userInventoryProducts = useAppSelector(selectInventoryProducts);
   const userId = claims?.sub;
-  const inventoryStatus = useAppSelector(state => state.userInventory.status)
+  const [inventoryStatus, setInventoryStatus] = useState<'idle' | 'loading' | 'succeeded' | 'failed'>('idle');
+  const [userInventoryProducts, setUserInventoryProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    if (inventoryStatus === LoadingStatus.Idle && accessToken != null ) {
-      dispatch(fetchInventory(userId))
-    }
-  }, [inventoryStatus, dispatch, userId, accessToken])
+    const fetchData = async () => {
+      if (!accessToken) return;
+      setInventoryStatus('loading');
+      try {
+        const res = await GetUserInventory();
+        setUserInventoryProducts(res.data);
+        setInventoryStatus('succeeded');
+      } catch {
+        setInventoryStatus('failed');
+      }
+    };
+    fetchData();
+  }, [accessToken])
 
   const columns = useMemo<ColumnDef<Product>[]>(
     () => [
@@ -116,7 +126,7 @@ function UserInventory() {
         <ListingProductForm selectedProduct={selectedProduct} closeModal={closeModal} />
       </Modal>
     {accessToken ? ( 
-      inventoryStatus == LoadingStatus.Loading ? (
+      inventoryStatus == 'loading' ? (
         <>
           <h3>Loading...</h3>
         </>

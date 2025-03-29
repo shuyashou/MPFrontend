@@ -1,5 +1,5 @@
 import './ProductTable.css'
-import { Fragment, useState, useMemo } from 'react'
+import { Fragment, useState, useMemo, useEffect } from 'react'
 import {
   Column,
   ColumnDef,
@@ -19,6 +19,8 @@ import { ListingProduct } from '../dataModels/ListingProduct'
 import { getListingProducts } from '../api/GetListingProductsAPI'
 import { useAppSelector } from '../app/hooks'
 import { selectAccessToken } from '../features/user/userSlice'
+import Modal from 'react-modal';
+import { purchaseProduct } from '../api/PurchaseProductsAPI';
 
 
 function ProductTable() {
@@ -44,7 +46,7 @@ function ProductTable() {
         enableColumnFilter: false
       },
       {
-        accessorKey: 'seller',
+        accessorKey: 'seller.displayName',
         header: () => 'Seller',
         enableSorting: false
       },
@@ -52,8 +54,21 @@ function ProductTable() {
     []
   );
 
-  const [data] = useState(() => getListingProducts(10000));
+  const [data, setData] = useState<ListingProduct[]>([]);
+  const [open, setOpen] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  Modal.setAppElement('#root');
 
+  async function fetchListingProducts() {
+    const res = await getListingProducts();
+    setData(res.data);
+  }
+  useEffect(() => {
+    if (accessToken != null) {
+      fetchListingProducts();
+    }
+  }, [accessToken]);
+  
   const [sorting, setSorting] = useState<SortingState>([])
 
   const [pagination, setPagination] = useState<PaginationState>({
@@ -81,12 +96,35 @@ function ProductTable() {
     // autoResetPageIndex: false, // turn off page index reset when sorting or filtering
   });
 
+  function buyProduct(productId: number) {
+    console.log(productId);
+    purchaseProduct(productId).then(fetchListingProducts).finally(() => setProcessing(false));
+    setOpen(!open);
+    setProcessing(true); 
+  }
+
   const renderSubComponent = ({ row }: { row: Row<ListingProduct> }) => {
     return (
       <div className={"productDetails " + (row.getIsExpanded() ? 'tb-expand' : '')}>
         <p>{row.original.description}</p> 
         <div style={{textAlign:'right'}}>
-          <button className='buyBtn'>Buy Now</button>
+          <button onClick={() => setOpen(!open)} className='buyBtn'>Buy Now</button>
+           <Modal
+             isOpen={open}
+             contentLabel="Confirm"
+             className="modal"
+           >
+             <p style={{color:'white'}}>Confirm to buy "{row.original.name}"?</p>
+             <button onClick={() => buyProduct(row.original.id)}>Confirm</button>
+             <button onClick={() => setOpen(!open)}>Cancel</button>
+           </Modal>
+           <Modal
+             isOpen={processing}
+             contentLabel="Processing"
+             className="modal"
+           >
+             <p style={{ color: 'white' }}>Process your purchase order, please wait...</p>
+           </Modal>
         </div>
       </div>
     )

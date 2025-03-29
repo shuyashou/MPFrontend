@@ -1,7 +1,6 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from '../../app/store' 
 import { Product } from '../../dataModels/Product';
-import { addProductToUserInventory, getUserInventory } from '../../api/GetUserInventoryAPI';
 
 export enum LoadingStatus {
     Idle = 0,
@@ -22,53 +21,19 @@ const initialState: InventoryState = {
     error: null
 };
 
-export const fetchInventory = createAsyncThunk('userInventory/fetchInventory', async (userId: string | undefined) => {
-    const response = await getUserInventory(userId);
-    return response;
-})
-  
-export const addNewProduct = createAsyncThunk('userInventory/addProductToInventory', async (product: Product) => {
-    const response = await addProductToUserInventory(product.id);
-    if (response)
-    {
-        return product;
-    }
-
-    return null;
-})
 
 export const userInventorySlice = createSlice({
   name: 'userInventory',
   initialState,
    reducers: {
-    listProduct(state, action: PayloadAction<string>) {
+    listProduct(state, action: PayloadAction<number>) {
       state.products = state.products.filter((p) => p.id !== action.payload)
     },
     refreshData(state) {
       state.status = LoadingStatus.Idle
     }
   },
-  extraReducers(builder) {
-    builder
-      .addCase(fetchInventory.pending, (state) => {
-        state.status = LoadingStatus.Loading;
-      })
-      .addCase(fetchInventory.fulfilled, (state, action) => {
-        state.status = LoadingStatus.Succeeed
-        // Add any fetched posts to the array
-        state.products = action.payload;
-      })
-      .addCase(fetchInventory.rejected, (state, action) => {
-        state.status = LoadingStatus.Failed;
-        state.error = action.error.message;
-      })
-      .addCase(addNewProduct.fulfilled, (state, action) => {
-        if (action.payload != null)
-        {
-            state.products.push(action.payload);
-        }
-      })
-  }
+
 });
 
 export const { listProduct, refreshData } = userInventorySlice.actions;
